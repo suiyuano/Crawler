@@ -14,6 +14,7 @@ import re
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import openpyxl
+import csv
 
 # 全局变量
 sv_info = []
@@ -40,7 +41,7 @@ def get_page(url, driver):
     driver = driver
     driver.get(url)
     # 等待页面加载完毕，不然有可能找不到元素
-    time.sleep(120)
+    time.sleep(200)
 
     # 获取文件头
     # 定位到 tr 元素，这里使用 xpath 选择器
@@ -53,8 +54,11 @@ def get_page(url, driver):
     for th in th_elements:
         headers.append(th.text)
         # print(th.text)
-    sv_info.append(headers)
+
     headers.pop(-1)
+    sv_info.append(headers)
+    error_sv_info.append(headers)
+
     header_len = len(headers)
     # print(headers)
     print(f'设置的字段数共有：{header_len}')
@@ -64,7 +68,7 @@ def get_page(url, driver):
 
     count = 1
     while True:
-        if count >= 3:    #纯粹用来测试的
+        if count >= 3:  # 纯粹用来测试的
             break
         else:
             count += 1
@@ -133,35 +137,42 @@ def get_page(url, driver):
 
 
 def export_info():
-    # 创建输出表格Excel：创建工作表
-    excel = openpyxl.Workbook()
-    # 创建sheet页：以demo为名字创建一个sheet页
-    sheet = excel.create_sheet('全部SV_info', 0)
+    # 输出excel
+    # # 创建输出表格Excel：创建工作表
+    # excel = openpyxl.Workbook()
+    # # 创建sheet页：以demo为名字创建一个sheet页
+    # sheet = excel.create_sheet('全部SV_info', 0)
+    #
+    # # 第一行第一列的单元格
+    # for i in range(len(sv_info)):
+    #     for k in range(len(sv_info[i])):
+    #         cell = sheet.cell(row=i + 1, column=k + 1)
+    #         # 单元格赋值
+    #         cell.value = sv_info[i][k]
+    #
+    # # 保存excel文件
+    # excel.save('sv_info.xlsx')
 
-    # 第一行第一列的单元格
-    for i in range(len(sv_info)):
-        for k in range(len(sv_info[i])):
-            cell = sheet.cell(row=i + 1, column=k + 1)
-            # 单元格赋值
-            cell.value = sv_info[i][k]
+    # 输出csv
+    # 打开文件，写入数据
 
-    # 保存excel文件
-    excel.save('sv_info.xlsx')
+    # 正常信息
+    with open("sv_info.csv", mode='w', newline='', encoding='utf-8') as file:
+        # 创建一个csv.writer对象
+        csv_writer = csv.writer(file)
 
-    # 创建输出表格Excel：创建工作表
-    excel_error = openpyxl.Workbook()
-    # 创建sheet页：以demo为名字创建一个sheet页
-    sheet = excel_error.create_sheet('错误SV_info', 0)
+        # 写入二维列表的每一行
+        for row in sv_info:
+            csv_writer.writerow(row)
 
-    # 第一行第一列的单元格
-    for i in range(len(error_sv_info)):
-        for k in range(len(error_sv_info[i])):
-            cell = sheet.cell(row=i + 1, column=k + 1)
-            # 单元格赋值
-            cell.value = error_sv_info[i][k]
+    # 异常信息
+    with open("error_sv_info.csv", mode='w', newline='', encoding='utf-8') as file:
+        # 创建一个csv.writer对象
+        csv_writer = csv.writer(file)
 
-    # 保存excel文件
-    excel_error.save('sv_info.xlsx')
+        # 写入二维列表的每一行
+        for row in error_sv_info:
+            csv_writer.writerow(row)
 
 
 def main():
