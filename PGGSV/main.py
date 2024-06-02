@@ -52,6 +52,8 @@ def get_page(url, driver):
     # 提取每个 th 元素的文本
     headers = []
     for th in th_elements:
+        # 滑窗，滚动到定位元素
+        driver.execute_script("arguments[0].scrollIntoView();", th)
         headers.append(th.text)
         # print(th.text)
 
@@ -60,18 +62,18 @@ def get_page(url, driver):
     error_sv_info.append(headers)
 
     header_len = len(headers)
-    # print(headers)
+    print(headers)
     print(f'设置的字段数共有：{header_len}')
 
     # 获取SV内容
     pages = []  # 一会用于判断是不是存在重复页
 
-    count = 1
+    # count = 1
     while True:
-        if count >= 3:  # 纯粹用来测试的
-            break
-        else:
-            count += 1
+        # if count >= 3:  # 纯粹用来测试的
+        #     break
+        # else:
+        #     count += 1
 
         # 判断是不是最后一页
         # 定位到 ul 元素，这里使用 xpath 选择器
