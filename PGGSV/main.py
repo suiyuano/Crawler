@@ -82,7 +82,7 @@ def get_page(url, driver):
         # 获取ul元素下的所有直接子元素
         li_elements = ul_element.find_elements(By.XPATH, './li')
 
-        page_num = 0  # 初始值，其实没意义
+        page_num = 0  # 初始值，以防没有class_value == 'number active'的元素
         # 遍历所有li元素，获取每个元素的class属性值
         for li in li_elements:
             # 获取class属性值
@@ -127,15 +127,42 @@ def get_page(url, driver):
                 error_sv_info.append(current_sv)
                 # print(f'字段数不相符！可能出问题了')
 
-        # 点击下一页
-        try:
-            button = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/button[2]')
-            button.click()
-            time.sleep(5)
-        except:
+        # 如果是最后一页 4421
+        if int(page_num) == 4421:
             # 可能已经到达最后一页
             print(f'当前的页数是：{page_num}，可能已经是最后一页了！')
             break
+
+        # 点击下一页
+        while True:
+            try:
+                button = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/button[2]')
+                button.click()
+                time.sleep(5)
+
+                # 判断是否翻页
+                # 定位到 ul 元素，这里使用 xpath 选择器
+                ul_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/ul')
+
+                # 获取ul元素下的所有直接子元素
+                li_elements = ul_element.find_elements(By.XPATH, './li')
+
+                current_page = 0  # 初始值，以防没有class_value == 'number active'的元素
+                # 遍历所有li元素，获取每个元素的class属性值
+                for li in li_elements:
+                    # 获取class属性值
+                    class_value = li.get_attribute('class')
+                    if class_value == 'number active':
+                        current_page = li.text
+                if int(current_page) == (int(page_num) + 1):
+                    # 成功翻页
+                    break
+                else:
+                    # 没有翻页，或者翻页出错，等待5S，然后再次尝试翻页操作
+                    time.sleep(5)
+                    continue
+            except:
+                continue
 
 
 def export_info():
