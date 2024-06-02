@@ -131,7 +131,7 @@ def get_page(url, driver):
         try:
             button = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/button[2]')
             button.click()
-            time.sleep(10)
+            time.sleep(5)
         except:
             # 可能已经到达最后一页
             print(f'当前的页数是：{page_num}，可能已经是最后一页了！')
