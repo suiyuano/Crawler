@@ -49,7 +49,7 @@ def get_page(url, driver):
     driver = driver
     driver.get(url)
     # 等待页面加载完毕，不然有可能找不到元素
-    time.sleep(200)
+    time.sleep(300)
 
     # 获取文件头
     # 定位到 tr 元素，这里使用 xpath 选择器
