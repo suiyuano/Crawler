@@ -36,6 +36,14 @@ def get_driver():
         return webdriver.Chrome()
 
 
+def get_output(svlist):
+    out = ''
+    for each in svlist:
+        out = out + each + '\t'
+    out = out.strip('\t') + '\n'
+    return out
+
+
 # 爬取某些设置下的所有学校
 def get_page(url, driver):
     driver = driver
@@ -61,6 +69,15 @@ def get_page(url, driver):
     sv_info.append(headers)
     error_sv_info.append(headers)
 
+    # 写入文件头
+    out = get_output(headers)
+    with open('sv_info.txt', 'a+') as f:
+        f.write(out)
+        f.close()
+    with open('error_sv_info.txt', 'a+') as f:
+        f.write(out)
+        f.close()
+
     header_len = len(headers)
     print(headers)
     print(f'设置的字段数共有：{header_len}')
@@ -68,101 +85,108 @@ def get_page(url, driver):
     # 获取SV内容
     pages = []  # 一会用于判断是不是存在重复页
 
-    # count = 1
-    while True:
-        # if count >= 3:  # 纯粹用来测试的
-        #     break
-        # else:
-        #     count += 1
+    # 每读一行就写一行
+    with open('sv_info.txt', 'a+') as f1, open('error_sv_info.txt', 'a+') as f2:
+        # count = 1
+        while True:
+            # if count >= 3:  # 纯粹用来测试的
+            #     break
+            # else:
+            #     count += 1
 
-        # 判断是不是最后一页
-        # 定位到 ul 元素，这里使用 xpath 选择器
-        ul_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/ul')
+            # 判断是不是最后一页
+            # 定位到 ul 元素，这里使用 xpath 选择器
+            ul_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/ul')
 
-        # 获取ul元素下的所有直接子元素
-        li_elements = ul_element.find_elements(By.XPATH, './li')
+            # 获取ul元素下的所有直接子元素
+            li_elements = ul_element.find_elements(By.XPATH, './li')
 
-        page_num = 0  # 初始值，以防没有class_value == 'number active'的元素
-        # 遍历所有li元素，获取每个元素的class属性值
-        for li in li_elements:
-            # 获取class属性值
-            class_value = li.get_attribute('class')
-            if class_value == 'number active':
-                page_num = li.text
+            page_num = 0  # 初始值，以防没有class_value == 'number active'的元素
+            # 遍历所有li元素，获取每个元素的class属性值
+            for li in li_elements:
+                # 获取class属性值
+                class_value = li.get_attribute('class')
+                if class_value == 'number active':
+                    page_num = li.text
 
-            # # 打印class属性值
-            # print(f'"{class_value}"')
+                # # 打印class属性值
+                # print(f'"{class_value}"')
 
-        # # 定位到 ul 下具有特定 class 的标签，假设 class 名称为 'my-class'
-        # page_num = ul_element.find_element(By.CLASS_NAME, 'number active')
+            # # 定位到 ul 下具有特定 class 的标签，假设 class 名称为 'my-class'
+            # page_num = ul_element.find_element(By.CLASS_NAME, 'number active')
 
-        # 提取标签的文本
-        print(f'当前的页数是：{page_num}')
-        if page_num in pages:
-            print(f'当前页已经重复了！')
-            break
-        else:
-            pages.append(page_num)
-
-        # 获取当前页面每个SV的信息
-        # 获取整个tbody
-        tbody_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[1]/div[3]/table/tbody')
-
-        # 定位到tbody下的所有tr元素
-        tr_elements = tbody_element.find_elements(By.TAG_NAME, 'tr')
-
-        # 遍历所有tr元素，提取每个tr下的文本
-        for tr in tr_elements:
-            current_sv = []
-            # 获取tr下的所有直接子元素
-            child_elements = tr.find_elements(By.XPATH, './*')
-            # 获取每个子元素的文本并打印
-            for child in child_elements:
-                current_sv.append(child.text)
-            # print(current_sv)
-            if len(current_sv) == header_len:
-                sv_info.append(current_sv)
-                # print(f'字段数相符！')
+            # 提取标签的文本
+            print(f'当前的页数是：{page_num}')
+            if page_num in pages:
+                print(f'当前页已经重复了！')
+                break
             else:
-                error_sv_info.append(current_sv)
-                # print(f'字段数不相符！可能出问题了')
+                pages.append(page_num)
 
-        # 如果是最后一页 4421
-        if int(page_num) == 4421:
-            # 可能已经到达最后一页
-            print(f'当前的页数是：{page_num}，可能已经是最后一页了！')
-            break
-        else:
-            # 点击下一页
-            while True:
-                try:
-                    button = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/button[2]')
-                    button.click()
-                    time.sleep(5)
+            # 获取当前页面每个SV的信息
+            # 获取整个tbody
+            tbody_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[1]/div[3]/table/tbody')
 
-                    # 判断是否翻页
-                    # 定位到 ul 元素，这里使用 xpath 选择器
-                    ul_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/ul')
+            # 定位到tbody下的所有tr元素
+            tr_elements = tbody_element.find_elements(By.TAG_NAME, 'tr')
 
-                    # 获取ul元素下的所有直接子元素
-                    li_elements = ul_element.find_elements(By.XPATH, './li')
+            # 遍历所有tr元素，提取每个tr下的文本
+            for tr in tr_elements:
+                current_sv = []
+                # 获取tr下的所有直接子元素
+                child_elements = tr.find_elements(By.XPATH, './*')
+                # 获取每个子元素的文本并打印
+                for child in child_elements:
+                    current_sv.append(child.text)
+                # print(current_sv)
+                if len(current_sv) == header_len:
+                    sv_info.append(current_sv)
+                    out = get_output(current_sv)
+                    f1.write(out)
+                    # print(f'字段数相符！')
+                else:
+                    out = get_output(current_sv)
+                    f2.write(out)
+                    error_sv_info.append(current_sv)
+                    # print(f'字段数不相符！可能出问题了')
 
-                    current_page = 0  # 初始值，以防没有class_value == 'number active'的元素
-                    # 遍历所有li元素，获取每个元素的class属性值
-                    for li in li_elements:
-                        # 获取class属性值
-                        class_value = li.get_attribute('class')
-                        if class_value == 'number active':
-                            current_page = li.text
-                    if int(current_page) == (int(page_num) + 1):
-                        # 成功翻页
-                        break
-                    else:
-                        # 没有翻页，或者翻页出错，等待5S，然后再次尝试翻页操作
+            # 如果是最后一页 4421
+            if int(page_num) == 4421:
+                # 可能已经到达最后一页
+                print(f'当前的页数是：{page_num}，可能已经是最后一页了！')
+                break
+            else:
+                # 点击下一页
+                while True:
+                    try:
+                        button = driver.find_element(By.XPATH,
+                                                     '/html/body/div[1]/div/div/div[3]/div[2]/div/div/button[2]')
+                        button.click()
                         time.sleep(5)
+
+                        # 判断是否翻页
+                        # 定位到 ul 元素，这里使用 xpath 选择器
+                        ul_element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/div[3]/div[2]/div/div/ul')
+
+                        # 获取ul元素下的所有直接子元素
+                        li_elements = ul_element.find_elements(By.XPATH, './li')
+
+                        current_page = 0  # 初始值，以防没有class_value == 'number active'的元素
+                        # 遍历所有li元素，获取每个元素的class属性值
+                        for li in li_elements:
+                            # 获取class属性值
+                            class_value = li.get_attribute('class')
+                            if class_value == 'number active':
+                                current_page = li.text
+                        if int(current_page) == (int(page_num) + 1):
+                            # 成功翻页
+                            break
+                        else:
+                            # 没有翻页，或者翻页出错，等待5S，然后再次尝试翻页操作
+                            time.sleep(5)
+                            continue
+                    except:
                         continue
-                except:
-                    continue
 
 
 def export_info():
