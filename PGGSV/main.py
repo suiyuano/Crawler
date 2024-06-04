@@ -66,8 +66,8 @@ def get_page(url, driver):
         # print(th.text)
 
     headers.pop(-1)
-    sv_info.append(headers)
-    error_sv_info.append(headers)
+    # sv_info.append(headers)
+    # error_sv_info.append(headers)
 
     # 写入文件头
     out = get_output(headers)
@@ -140,14 +140,14 @@ def get_page(url, driver):
                     current_sv.append(child.text)
                 # print(current_sv)
                 if len(current_sv) == header_len:
-                    sv_info.append(current_sv)
+                    # sv_info.append(current_sv)
                     out = get_output(current_sv)
                     f1.write(out)
                     # print(f'字段数相符！')
                 else:
                     out = get_output(current_sv)
                     f2.write(out)
-                    error_sv_info.append(current_sv)
+                    # error_sv_info.append(current_sv)
                     # print(f'字段数不相符！可能出问题了')
 
             # 如果是最后一页 4421
@@ -233,7 +233,7 @@ def main():
     web_url = 'https://www.biosino.org/pggsv/#/toolsTableBrowser'
     driver = get_driver()
     get_page(web_url, driver)
-    export_info()
+    # export_info()
 
     # 休息一分钟，检查信息
     time.sleep(10)
