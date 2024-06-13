@@ -26,54 +26,16 @@ school_info = []
 def get_driver():
     try:
         # 设置浏览器驱动路径（这里使用Chrome浏览器驱动作为示例）
-        driver_path = 'E:\软件\chromedriver\chromedriver_win32\chromedriver'
+        driver_path = 'E:\study\coding\python\crawler\chromedriver\chromedriver-win64\chromedriver.exe'
 
         # 选择谷歌浏览器
         s = Service(executable_path=driver_path)
         driver = webdriver.Chrome(service=s)
         return driver
-    except Exception:
+    except Exception as e:
         print(f'获取浏览器实例失败！')
+        # print(f'错误是：{e}')
         return webdriver.Chrome()
-
-
-# 得到登录的cookie
-def login_cookie():
-    driver = get_driver()
-    driver.set_page_load_timeout(5)
-    driver.set_script_timeout(5)
-    LOGIN_URL = 'https://www.ewt360.com/'
-    driver.get(LOGIN_URL)
-    time.sleep(5)
-    input("请登录后按 Enter")
-    cookies = driver.get_cookies()
-    jsonCookies = json.dumps(cookies)
-    # 下面的文件位置需要自己改
-    with open('cookie.txt', 'w') as f:
-        f.write(jsonCookies)
-    driver.quit()
-
-
-# 再次登录
-def login():
-    driver.set_page_load_timeout(5)
-    driver.set_script_timeout(5)
-    LOGIN_URL = 'https://www.ewt360.com/'
-    driver.get(LOGIN_URL)
-    time.sleep(5)
-    # 下面的文件位置需要自己改，与上面的改动一致
-    f = open('cookie.txt')
-    cookies = f.read()
-    jsonCookies = json.loads(cookies)
-    # print(jsonCookies)
-    for co in jsonCookies:
-        driver.add_cookie(co)
-    # for co in cookie:
-    #     driver.add_cookie(co)
-    driver.refresh()
-    # 打印网页title
-    # print(driver.title)
-    time.sleep(5)
 
 
 """
@@ -127,22 +89,20 @@ def get_table_content(tableId):
 def get_schools(url):
     driver.get(url)
     # 等待页面加载完毕，不然有可能找不到元素
-    time.sleep(5)
+    time.sleep(120)
 
-    # 先刷新input 文本框的内容
-    input_element = driver.find_element(By.ID, 'rec-input1')  # 获取该输入框的ID
-    input_element.clear()  # 清楚该输入框中的原本内容
-    input_element.send_keys("1", Keys.ENTER)  # 向该输入框中添加位次排名: "1“
-    time.sleep(10)
-
-    input_element = driver.find_element(By.XPATH,
-                                        '//*[@id="root"]/section/section/section/div[1]/div/div[2]/div/div[2]/div[1]/div/div/div/div[2]/div/div[2]/div/input[2]')  # 获取该输入框的XPATH
-    input_element.clear()  # 清楚该输入框中的原本内容
-    input_element.send_keys("1000000", Keys.ENTER)  # 向该输入框中添加位次排名: "1000000“
-    # input_element.send_keys("100", Keys.ENTER)  # 向该输入框中添加位次排名: "100“ test
-    time.sleep(10)
-
-
+    # # 先刷新input 文本框的内容
+    # input_element = driver.find_element(By.ID, 'rec-input1')  # 获取该输入框的ID
+    # input_element.clear()  # 清楚该输入框中的原本内容
+    # input_element.send_keys("1", Keys.ENTER)  # 向该输入框中添加位次排名: "1“
+    # time.sleep(10)
+    #
+    # input_element = driver.find_element(By.XPATH,
+    #                                     '//*[@id="root"]/section/section/section/div[1]/div/div[2]/div/div[2]/div[1]/div/div/div/div[2]/div/div[2]/div/input[2]')  # 获取该输入框的XPATH
+    # input_element.clear()  # 清楚该输入框中的原本内容
+    # input_element.send_keys("1000000", Keys.ENTER)  # 向该输入框中添加位次排名: "1000000“
+    # # input_element.send_keys("100", Keys.ENTER)  # 向该输入框中添加位次排名: "100“ test
+    # time.sleep(10)
 
     # count=0
     while True:
@@ -223,10 +183,13 @@ def get_schools(url):
 
 
 def export_info():
+    major = "理科"
+    current = "本科一批"
+
     # 创建输出表格Excel：创建工作表
     excel = openpyxl.Workbook()
     # 创建sheet页：以demo为名字创建一个sheet页
-    sheet = excel.create_sheet('本科一批', 0)
+    sheet = excel.create_sheet(f'{major}{current}', 0)
 
     # 第一行第一列的单元格
     for i in range(len(school_info)):
@@ -236,15 +199,13 @@ def export_info():
             cell.value = school_info[i][k]
 
     # 保存excel文件
-    excel.save('school_info.xlsx')
+    excel.save(f'{major}{current}_school_info.xlsx')
 
 
 if __name__ == "__main__":
     # 设置你想要搜索的问题
-    web_url = 'https://www.ewt360.com/career/careerlibs/index.html#/volunteerold?queryType=2'
-    login_cookie()
+    web_url = 'https://www.ewt360.com/site-www/home/page'
     driver = get_driver()
-    login()
     get_schools(web_url)
     export_info()
 
