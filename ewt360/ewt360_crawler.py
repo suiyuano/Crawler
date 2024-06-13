@@ -57,10 +57,26 @@ def get_table_content(tableId):
         # if tr.text == "院校名称 专业名称 本专科批次 首选科目 再选科目 收藏":
         #     # 是标题，直接略过
         #     continue
-        current_school_info = (tr.text).split("\n")  # 以换行符拆分成若干个(个数与列的个数相同)一维列表
 
-        page_schools.append(current_school_info)  # 将表格数据组成二维的列表
-        school_info.append(current_school_info)  # 将当前表格存进总的信息池
+        # # 接下来是每一列细分的写法，但是不整齐
+        # current_school_info = (tr.text).split("\n")  # 以换行符拆分成若干个(个数与列的个数相同)一维列表
+        #
+        # page_schools.append(current_school_info)  # 将表格数据组成二维的列表
+        # school_info.append(current_school_info)  # 将当前表格存进总的信息池
+
+        current_school_info = []
+        # 获取tr下的所有td元素
+        td_elements = tr.find_elements(By.TAG_NAME, "td")
+        for td in td_elements:
+
+            # 这是不拆分每一列的写法，但是比较整齐
+            if td.text != '':
+                current_school_info.append(td.text)
+            else:
+                current_school_info.append('null')
+
+        page_schools.append(current_school_info)
+        school_info.append(current_school_info)
 
     print(page_schools)
 
@@ -106,20 +122,6 @@ def get_schools(url):
 
     # count=0
     while True:
-        # if count>=3:
-        #     break
-        # else:
-        #     count+=1
-
-        # message = get_table_content('//*[@id="old-home-data-list"]/div/div/table/tbody')
-        # if message == "break":
-        #     print("开始重复了！请检查！")
-        #     break
-        # elif message == "continue":
-        #     pass
-        # else:
-        #     print("出现未知错误！请检查！")
-        #     break
 
         get_table_content('//*[@id="old-home-data-list"]/div/div/table/tbody')
 
