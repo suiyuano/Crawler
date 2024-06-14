@@ -185,8 +185,8 @@ def get_schools(url):
 
 
 def export_info():
-    major = "理科"
-    current = "本科一批"
+    major = "文科"
+    current = "专科"
 
     # 创建输出表格Excel：创建工作表
     excel = openpyxl.Workbook()
