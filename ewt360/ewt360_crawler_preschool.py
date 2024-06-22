@@ -123,16 +123,15 @@ def get_schools(url):
     # count=0
     while True:
 
-        get_table_content('//*[@id="old-home-data-list"]/div/div/table/tbody')
+        get_table_content('//*[@id="table_tab_warp--WI7Jb"]/div/div/div[2]/div/div/div/div/div/table/tbody')
 
-        page = driver.find_element(By.XPATH,
-                                   '//*[@id="root"]/section/section/section/div[1]/div/div[2]/div/div[2]/div[2]/div[2]/ul')
+        page = driver.find_element(By.XPATH, '//*[@id="table_tab_warp--WI7Jb"]/div/div/div[3]/ul')
 
         list = page.find_elements(By.XPATH, 'li')
         # len(list)  # 计算有多少个a
         last_li = list[-1]  # 用列表标识符取最后一个li
         last_li_title = last_li.get_attribute("title")
-        if last_li_title == "Next Page":
+        if last_li_title == "下一页":
             # 是下一页
 
             # 判断是否是最后一页
@@ -186,7 +185,7 @@ def get_schools(url):
 
 def export_info():
     major = "文科"
-    current = "专科"
+    current = "专业分数线"
 
     # 创建输出表格Excel：创建工作表
     excel = openpyxl.Workbook()
@@ -201,7 +200,7 @@ def export_info():
             cell.value = school_info[i][k]
 
     # 保存excel文件
-    excel.save(f'院校优先_{major}{current}_school_info.xlsx')
+    excel.save(f'提前批_{major}{current}_school_info.xlsx')
 
 
 if __name__ == "__main__":
