@@ -15,7 +15,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import openpyxl
 
-# username: sntxq password:txq743232885
+# username: sntxq password: 462167ysy
 
 
 # 全局变量
@@ -105,7 +105,7 @@ def get_table_content(tableId):
 def get_schools(url):
     driver.get(url)
     # 等待页面加载完毕，不然有可能找不到元素
-    time.sleep(120)
+    time.sleep(60)
 
     # # 先刷新input 文本框的内容
     # input_element = driver.find_element(By.ID, 'rec-input1')  # 获取该输入框的ID
@@ -201,7 +201,7 @@ def export_info():
             cell.value = school_info[i][k]
 
     # 保存excel文件
-    excel.save(f'{major}{current}_school_info.xlsx')
+    excel.save(f'专业优先24最新_{major}{current}_school_info.xlsx')
 
 
 if __name__ == "__main__":

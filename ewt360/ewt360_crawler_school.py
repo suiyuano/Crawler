@@ -105,7 +105,7 @@ def get_table_content(tableId):
 def get_schools(url):
     driver.get(url)
     # 等待页面加载完毕，不然有可能找不到元素
-    time.sleep(120)
+    time.sleep(60)
 
     # # 先刷新input 文本框的内容
     # input_element = driver.find_element(By.ID, 'rec-input1')  # 获取该输入框的ID
@@ -160,7 +160,7 @@ def get_schools(url):
         try:
             # next_page.click() #可能会报错，原因可能是由悬浮元素遮挡
             driver.execute_script("(arguments[0]).click()", next_page)
-            time.sleep(5)
+            time.sleep(3)
         except:
             print('已到最后一页！ Task finished！')
             break
@@ -201,7 +201,7 @@ def export_info():
             cell.value = school_info[i][k]
 
     # 保存excel文件
-    excel.save(f'院校优先_{major}{current}_school_info.xlsx')
+    excel.save(f'院校优先24最新_{major}{current}_school_info.xlsx')
 
 
 if __name__ == "__main__":
