@@ -15,12 +15,11 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import openpyxl
 
+
 # username: sntxq password: 462167ysy
 
 
 # 全局变量
-# school_code = {}
-school_info = []
 
 
 def file_line_generator(file_path):
@@ -53,69 +52,6 @@ def get_driver():
         return webdriver.Chrome()
 
 
-"""
-根据table的id属性和table中的某一个元素定位其在table中的位置
-table包括表头，位置坐标都是从1开始算
-tableId：table的id属性
-queryContent：需要确定位置的内容
-"""
-
-
-def get_table_content(tableId):
-    page_schools = []
-    table_loc = (By.XPATH, tableId)
-    # 按行查询表格的数据，取出的数据是一整行，按空格分隔每一列的数据
-    table_tr_list = driver.find_element(*table_loc).find_elements(By.TAG_NAME, "tr")
-
-    for tr in table_tr_list:
-        # print(tr.text)
-        # if tr.text == "院校名称 专业名称 本专科批次 首选科目 再选科目 收藏":
-        #     # 是标题，直接略过
-        #     continue
-
-        # # 接下来是每一列细分的写法，但是不整齐
-        # current_school_info = (tr.text).split("\n")  # 以换行符拆分成若干个(个数与列的个数相同)一维列表
-        #
-        # page_schools.append(current_school_info)  # 将表格数据组成二维的列表
-        # school_info.append(current_school_info)  # 将当前表格存进总的信息池
-
-        current_school_info = []
-        # 获取tr下的所有td元素
-        td_elements = tr.find_elements(By.TAG_NAME, "td")
-        for td in td_elements:
-
-            # 这是不拆分每一列的写法，但是比较整齐
-            if td.text != '':
-                current_school_info.append(td.text)
-            else:
-                current_school_info.append('null')
-
-        page_schools.append(current_school_info)
-        school_info.append(current_school_info)
-
-    print(page_schools)
-
-    # # 判断当前页数
-    # try:
-    #     page_num = driver.find_element(By.XPATH, '//*[@id="pagination"]/div[1]').text.split('：')[1].split(' ')[0]
-    #     print(f'当前页数是：{page_num}')
-    # except:
-    #     text = driver.find_element(By.XPATH, '//*[@id="pagination"]/div[1]').text
-    #     print(f'出错了！当前的text：{text}')
-    #     print(page_schools)
-    #
-    #     message = 'break'
-    #     return message
-    #
-    # if page_num != "3787/3787":
-    #     message = 'continue'
-    # else:
-    #     message = 'break'
-    #
-    # print(page_schools)
-    # return message
-
-
 def get_all_text(driver, element):
     """
     递归获取元素及其所有子元素的文本内容。
@@ -145,7 +81,7 @@ def get_crawler(url):
     behavior_terms = ['query_breed', 'result_breed']
 
     sig = True
-    file = file_line_generator('tree_sort.txt')
+    file = file_line_generator('tree_sort_test.txt')
     for line in file:
         breed = line.strip('\n')
 
@@ -319,17 +255,46 @@ def get_crawler(url):
                             print(f'出错了！现在的sub_text:"{sub_text}"')
                             # current_behavior.append('null')
 
-
             behavior.append(current_behavior)
             print(f'当前行为表型为:{current_behavior}')
 
             sig = False
 
         except Exception as e:
-            with open('error_info.txt','a+') as fr:
+            with open('error_info.txt', 'a+') as fr:
                 fr.write(f'出错样本是:{breed}, 出错原因是:{e}' + '\n')
 
     export_info(behavior)
+
+
+def get_breed_url(url):
+    driver.get(url)
+
+    # 定位到父元素，这里以一个假设的XPath为例
+    parent_element = driver.find_element(By.XPATH, "/html/body/div[4]/div[1]/div[3]/aside/div/div[2]/div/div")
+    parent_element.click()
+
+    time.sleep(5)
+
+    # test = driver.find_element(By.XPATH, "/html/body/div[4]/div[1]/div[3]/aside/div/div[2]/div/div/div[2]/div")
+    # attri = test.get_attribute('class')
+    # print(attri)
+
+    # 找到父元素下一级的所有子元素，这里以class为'child'的元素为例
+    # children_elements = driver.find_element(By.CLASS_NAME, "selectize-dropdown-content").find_elements(By.XPATH, "./*")
+    children_elements = driver.find_element(By.XPATH,
+                                            "/html/body/div[4]/div[1]/div[3]/aside/div/div[2]/div/div/div[2]/div").find_elements(
+        By.XPATH, "./*")
+
+    # 遍历所有子元素，并获取它们的属性值，这里以'data-attribute'为例
+    with open('AKC_breed_url.txt', 'w') as f:
+        for child in children_elements:
+            # breed = child.text  # 这里获取文本失败估计是元素不可见
+            attribute_value = child.get_attribute('data-value')
+            breed = attribute_value.strip('/').split('/')[-1]
+            print(f'{breed}:{attribute_value}')
+            f.write(breed + '\t' + attribute_value + '\n')
+
 
 def export_info(outlist):
     sheetname = "dogtime"
@@ -352,9 +317,12 @@ def export_info(outlist):
 
 if __name__ == "__main__":
     # 设置你想要访问的基础网址
-    web_url = 'https://dogtime.com/dog-breeds'
+    web_url = 'https://www.akc.org/dog-breeds/'
     driver = get_driver()
-    get_crawler(web_url)
+
+    get_breed_url(web_url)
+
+    # get_crawler(web_url)
     # export_info()
 
     # 休息一分钟，检查信息
