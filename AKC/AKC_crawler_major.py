@@ -52,7 +52,7 @@ def get_driver():
         return webdriver.Chrome()
 
 
-def get_all_text(driver, element):
+def get_all_text(element):
     """
     递归获取元素及其所有子元素的文本内容。
 
@@ -73,198 +73,233 @@ def get_all_text(driver, element):
 
 
 # 爬取某些设置下的基础内容
-def get_crawler(url):
+def get_crawler():
     # 使用示例
     # 假设你有一个名为 'example.txt' 的文件
 
-    behavior = []
-    behavior_terms = ['query_breed', 'result_breed']
+    file = file_line_generator('AKC_breed_url.txt')
 
-    sig = True
-    file = file_line_generator('tree_sort_test.txt')
-    for line in file:
-        breed = line.strip('\n')
+    traits = {}
+    traits_terms = []
 
-        try:
-            driver.get(url)
-            # 等待页面加载完毕，不然有可能找不到元素
-            time.sleep(5)
+    for each in file:
+        parts = each.strip('\n').split('\t')
+        breed = parts[0]
+        url = parts[1]
 
-            # 先刷新input 文本框的内容
-            input_element = driver.find_element(By.XPATH,
-                                                '//*[@id="form-02f15b39-5275-4c9e-ae23-2fe8460c481e"]/div[2]/div[1]/input')  # 获取该输入框的ID
+        driver.get(url)
+        # 等待页面加载完毕，不然有可能找不到元素
+        time.sleep(5)
 
-            # # 创建 ActionChains 对象
-            # action_chains = ActionChains(driver)
-            #
-            # # 移动到目标元素的位置
-            # action_chains.move_to_element(input_element).perform()
+        # 基本统计量
+        statistics = driver.find_element(By.XPATH, '/html/body/div[4]/div[2]/div/div[2]/div[2]')
+        # 获取目标元素下的所有文本
+        all_text = get_all_text(statistics)
+        with open(f'./AKC_results/{breed.replace(" ", "_")}_statistics.txt', 'w') as f:
+            f.write(all_text)
+        f.close()
+        # print(f'基本统计量为：{all_text}')
 
-            js = "window.scrollTo(0,document.body.scrollHeight)"
-            driver.execute_script(js)
+        # 表型按钮
+        trait_element = driver.find_element(By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div/div[1]/ul/li[5]")
+        # # 使用JavaScript代码滚动到元素的位置
+        # driver.execute_script("arguments[0].scrollIntoView();", trait_element)
+        trait_element.click()
 
-            time.sleep(3)
+        children_elements = driver.find_element(By.XPATH, '//*[@id="breed-page__traits__all"]/div/div').find_elements(
+            By.XPATH, "./*")
 
-            input_element.clear()  # 清除该输入框中的原本内容
-            input_element.send_keys(breed, Keys.ENTER)  # 向该输入框中添加要查询的关键字
-            time.sleep(3)
+        # 遍历所有子元素，并获取它们的属性值，这里以'data-attribute'为例
+        for child in children_elements:
+            header = child.find_element(By.CSS_SELECTOR, 'h4').text
+            print(f'{breed}:{header}')
 
-            result_link = driver.find_element(By.XPATH,
-                                              '//*[@id="block-02f15b39-5275-4c9e-ae23-2fe8460c481e"]/div[1]/article[1]/figure/a')
-            result_link.click()  # 可能会报错，原因可能是由悬浮元素遮挡
 
-            time.sleep(3)
-            js = "window.scrollTo(0,document.body.scrollHeight)"
-            driver.execute_script(js)
-            time.sleep(3)
-
-            # breed品种
-            query_breed = breed
-            result_breed = driver.find_element(By.XPATH, ' //*[@id="primary"]/div[1]/div[1]/h1').text
-            # print(f'查询品种为：{query_breed}, 当前品种为：{result_breed}')
-
-            # 基本统计量
-            statistics = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[2]/section')
-            # 获取目标元素下的所有文本
-            all_text = get_all_text(driver, statistics)
-            with open(f'./dogtime_results/{result_breed.replace(" ", "_")}_statistics.txt', 'w') as f:
-                f.write(all_text)
-            f.close()
-            # print(f'基本统计量为：{all_text}')
-
-            # quick facts
-            facts = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[1]/div[2]/ul')
-            all_text = get_all_text(driver, facts)
-            with open(f'./dogtime_results/{result_breed.replace(" ", "_")}_statistics.txt', 'a+') as f:
-                f.write('\n' + all_text)
-            f.close()
-
-            # 行为表型
-            current_behavior = []
-            for i in range(len(behavior_terms)):
-                current_behavior.append('null')
-            current_behavior[0] = query_breed
-            current_behavior[1] = result_breed
-
-            # 找到包含特定class的元素的父元素
-            parent_element = driver.find_element(By.CLASS_NAME, 'xe-breed-card')
-
-            # 在父元素下找到所有具有特定class的子元素
-            elements = parent_element.find_elements(By.CLASS_NAME, 'xe-breed-accordion')
-
-            # #test
-            # test = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[1]/div[2]/div[12]/details[1]/ul/li[1]/details/summary/span[2]/span[1]')
-            # element_class = test.get_attribute("class")
-            # print(element_class)
-
-            if sig == True:
-                # 遍历所有找到的元素
-                for element in elements:
-                    # 找到summary heading
-                    summary_head = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary-heading')
-                    summary_text = summary_head.text
-                    behavior_terms.append(summary_text)
-
-                    # 找到下拉按钮并且点击
-                    pulldown = element.find_element(By.CLASS_NAME, 'xe-expander')
-                    # 使用JavaScript代码滚动到元素的位置
-                    driver.execute_script("arguments[0].scrollIntoView();", pulldown)
-                    pulldown.click()
-
-                    sub_elements = element.find_elements(By.CLASS_NAME, 'xe-breed-characteristics-list__heading')
-                    for sub in sub_elements:
-                        sub_text = sub.text
-                        behavior_terms.append(sub_text)
-
-                # 初始化完成
-                behavior.append(behavior_terms)
-                print(f'初始化后的行为共有：{behavior_terms}')
-
-            if sig == False:
-
-                # 遍历所有找到的元素
-                # count = 0
-                for element in elements:
-                    # 找到summary heading
-                    summary_head = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary-heading')
-                    summary_text = summary_head.text
-                    # print(summary_text)
-
-                    # 找到下拉按钮并且点击
-                    pulldown = element.find_element(By.CLASS_NAME, 'xe-expander')
-                    # 使用JavaScript代码滚动到元素的位置
-                    driver.execute_script("arguments[0].scrollIntoView();", pulldown)
-                    pulldown.click()
-
-                    # 找到summary对应的评分
-                    summary_stars = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary').find_element(
-                        By.CLASS_NAME, 'xe-breed-star-rating')
-
-                    # 获取该元素下所有的子元素
-                    all_elements = summary_stars.find_elements(By.TAG_NAME, "*")
-
-                    summary_selected_stars_num = 0
-                    # 遍历所有子元素，获取它们的class属性
-                    for each_star in all_elements:
-                        class_attr = each_star.get_attribute('class')
-                        if 'selected' in class_attr:
-                            summary_selected_stars_num += 1
-                    # summary_selected_stars = summary_stars.find_elements(By.CLASS_NAME,
-                    #                                                      'xe-breed-star xe-breed-star--selected')
-                    # summary_selected_stars_num = len(summary_selected_stars)
-                    # print(f'{summary_text}：{summary_selected_stars_num}')
-
-                    # element_class = summary_stars.get_attribute("class")
-                    #
-                    # # 打印获取到的class属性
-                    # print(element_class)
-
-                    if summary_text in behavior_terms:
-                        index = behavior_terms.index(summary_text)
-                        current_behavior[index] = summary_selected_stars_num
-                    else:
-                        print(f'出错了！现在的summary_text:"{summary_text}"')
-                        # current_behavior.append('null')
-
-                    sub_elements = element.find_elements(By.CLASS_NAME, 'xe-breed-characteristics-list__heading')
-                    for sub in sub_elements:
-                        sub_text = sub.text
-                        sub_stars = sub.find_element(By.XPATH, 'following-sibling::*[1]')
-
-                        # 获取该元素下所有的子元素
-                        all_elements = sub_stars.find_elements(By.TAG_NAME, "*")
-
-                        sub_selected_stars_num = 0
-                        # 遍历所有子元素，获取它们的class属性
-                        for each_star in all_elements:
-                            class_attr = each_star.get_attribute('class')
-                            if 'selected' in class_attr:
-                                sub_selected_stars_num += 1
-
-                        # print(f'{sub_text}：{sub_selected_stars_num}')
-
-                        # sub_selected_stars = sub_stars.find_elements(By.CLASS_NAME,
-                        #                                              'xe-breed-star xe-breed-star--selected')
-                        # sub_selected_stars_num = len(sub_selected_stars)
-                        # print(f'{sub_text}：{sub_selected_stars_num}')
-
-                        if sub_text in behavior_terms:
-                            index = behavior_terms.index(sub_text)
-                            current_behavior[index] = sub_selected_stars_num
-                        else:
-                            print(f'出错了！现在的sub_text:"{sub_text}"')
-                            # current_behavior.append('null')
-
-            behavior.append(current_behavior)
-            print(f'当前行为表型为:{current_behavior}')
-
-            sig = False
-
-        except Exception as e:
-            with open('error_info.txt', 'a+') as fr:
-                fr.write(f'出错样本是:{breed}, 出错原因是:{e}' + '\n')
-
-    export_info(behavior)
+    # sig = True
+    # file = file_line_generator('tree_sort_test.txt')
+    # for line in file:
+    #     breed = line.strip('\n')
+    #
+    #     try:
+    #         driver.get(url)
+    #         # 等待页面加载完毕，不然有可能找不到元素
+    #         time.sleep(5)
+    #
+    #         # 先刷新input 文本框的内容
+    #         input_element = driver.find_element(By.XPATH,
+    #                                             '//*[@id="form-02f15b39-5275-4c9e-ae23-2fe8460c481e"]/div[2]/div[1]/input')  # 获取该输入框的ID
+    #
+    #         # # 创建 ActionChains 对象
+    #         # action_chains = ActionChains(driver)
+    #         #
+    #         # # 移动到目标元素的位置
+    #         # action_chains.move_to_element(input_element).perform()
+    #
+    #         js = "window.scrollTo(0,document.body.scrollHeight)"
+    #         driver.execute_script(js)
+    #
+    #         time.sleep(3)
+    #
+    #         input_element.clear()  # 清除该输入框中的原本内容
+    #         input_element.send_keys(breed, Keys.ENTER)  # 向该输入框中添加要查询的关键字
+    #         time.sleep(3)
+    #
+    #         result_link = driver.find_element(By.XPATH,
+    #                                           '//*[@id="block-02f15b39-5275-4c9e-ae23-2fe8460c481e"]/div[1]/article[1]/figure/a')
+    #         result_link.click()  # 可能会报错，原因可能是由悬浮元素遮挡
+    #
+    #         time.sleep(3)
+    #         js = "window.scrollTo(0,document.body.scrollHeight)"
+    #         driver.execute_script(js)
+    #         time.sleep(3)
+    #
+    #         # breed品种
+    #         query_breed = breed
+    #         result_breed = driver.find_element(By.XPATH, ' //*[@id="primary"]/div[1]/div[1]/h1').text
+    #         # print(f'查询品种为：{query_breed}, 当前品种为：{result_breed}')
+    #
+    #         # 基本统计量
+    #         statistics = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[2]/section')
+    #         # 获取目标元素下的所有文本
+    #         all_text = get_all_text(driver, statistics)
+    #         with open(f'./dogtime_results/{result_breed.replace(" ", "_")}_statistics.txt', 'w') as f:
+    #             f.write(all_text)
+    #         f.close()
+    #         # print(f'基本统计量为：{all_text}')
+    #
+    #         # quick facts
+    #         facts = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[1]/div[2]/ul')
+    #         all_text = get_all_text(driver, facts)
+    #         with open(f'./dogtime_results/{result_breed.replace(" ", "_")}_statistics.txt', 'a+') as f:
+    #             f.write('\n' + all_text)
+    #         f.close()
+    #
+    #         # 行为表型
+    #         current_behavior = []
+    #         for i in range(len(behavior_terms)):
+    #             current_behavior.append('null')
+    #         current_behavior[0] = query_breed
+    #         current_behavior[1] = result_breed
+    #
+    #         # 找到包含特定class的元素的父元素
+    #         parent_element = driver.find_element(By.CLASS_NAME, 'xe-breed-card')
+    #
+    #         # 在父元素下找到所有具有特定class的子元素
+    #         elements = parent_element.find_elements(By.CLASS_NAME, 'xe-breed-accordion')
+    #
+    #         # #test
+    #         # test = driver.find_element(By.XPATH, '//*[@id="primary"]/div[1]/div[1]/div[2]/div[12]/details[1]/ul/li[1]/details/summary/span[2]/span[1]')
+    #         # element_class = test.get_attribute("class")
+    #         # print(element_class)
+    #
+    #         if sig == True:
+    #             # 遍历所有找到的元素
+    #             for element in elements:
+    #                 # 找到summary heading
+    #                 summary_head = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary-heading')
+    #                 summary_text = summary_head.text
+    #                 behavior_terms.append(summary_text)
+    #
+    #                 # 找到下拉按钮并且点击
+    #                 pulldown = element.find_element(By.CLASS_NAME, 'xe-expander')
+    #                 # 使用JavaScript代码滚动到元素的位置
+    #                 driver.execute_script("arguments[0].scrollIntoView();", pulldown)
+    #                 pulldown.click()
+    #
+    #                 sub_elements = element.find_elements(By.CLASS_NAME, 'xe-breed-characteristics-list__heading')
+    #                 for sub in sub_elements:
+    #                     sub_text = sub.text
+    #                     behavior_terms.append(sub_text)
+    #
+    #             # 初始化完成
+    #             behavior.append(behavior_terms)
+    #             print(f'初始化后的行为共有：{behavior_terms}')
+    #
+    #         if sig == False:
+    #
+    #             # 遍历所有找到的元素
+    #             # count = 0
+    #             for element in elements:
+    #                 # 找到summary heading
+    #                 summary_head = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary-heading')
+    #                 summary_text = summary_head.text
+    #                 # print(summary_text)
+    #
+    #                 # 找到下拉按钮并且点击
+    #                 pulldown = element.find_element(By.CLASS_NAME, 'xe-expander')
+    #                 # 使用JavaScript代码滚动到元素的位置
+    #                 driver.execute_script("arguments[0].scrollIntoView();", pulldown)
+    #                 pulldown.click()
+    #
+    #                 # 找到summary对应的评分
+    #                 summary_stars = element.find_element(By.CLASS_NAME, 'xe-breed-accordion__summary').find_element(
+    #                     By.CLASS_NAME, 'xe-breed-star-rating')
+    #
+    #                 # 获取该元素下所有的子元素
+    #                 all_elements = summary_stars.find_elements(By.TAG_NAME, "*")
+    #
+    #                 summary_selected_stars_num = 0
+    #                 # 遍历所有子元素，获取它们的class属性
+    #                 for each_star in all_elements:
+    #                     class_attr = each_star.get_attribute('class')
+    #                     if 'selected' in class_attr:
+    #                         summary_selected_stars_num += 1
+    #                 # summary_selected_stars = summary_stars.find_elements(By.CLASS_NAME,
+    #                 #                                                      'xe-breed-star xe-breed-star--selected')
+    #                 # summary_selected_stars_num = len(summary_selected_stars)
+    #                 # print(f'{summary_text}：{summary_selected_stars_num}')
+    #
+    #                 # element_class = summary_stars.get_attribute("class")
+    #                 #
+    #                 # # 打印获取到的class属性
+    #                 # print(element_class)
+    #
+    #                 if summary_text in behavior_terms:
+    #                     index = behavior_terms.index(summary_text)
+    #                     current_behavior[index] = summary_selected_stars_num
+    #                 else:
+    #                     print(f'出错了！现在的summary_text:"{summary_text}"')
+    #                     # current_behavior.append('null')
+    #
+    #                 sub_elements = element.find_elements(By.CLASS_NAME, 'xe-breed-characteristics-list__heading')
+    #                 for sub in sub_elements:
+    #                     sub_text = sub.text
+    #                     sub_stars = sub.find_element(By.XPATH, 'following-sibling::*[1]')
+    #
+    #                     # 获取该元素下所有的子元素
+    #                     all_elements = sub_stars.find_elements(By.TAG_NAME, "*")
+    #
+    #                     sub_selected_stars_num = 0
+    #                     # 遍历所有子元素，获取它们的class属性
+    #                     for each_star in all_elements:
+    #                         class_attr = each_star.get_attribute('class')
+    #                         if 'selected' in class_attr:
+    #                             sub_selected_stars_num += 1
+    #
+    #                     # print(f'{sub_text}：{sub_selected_stars_num}')
+    #
+    #                     # sub_selected_stars = sub_stars.find_elements(By.CLASS_NAME,
+    #                     #                                              'xe-breed-star xe-breed-star--selected')
+    #                     # sub_selected_stars_num = len(sub_selected_stars)
+    #                     # print(f'{sub_text}：{sub_selected_stars_num}')
+    #
+    #                     if sub_text in behavior_terms:
+    #                         index = behavior_terms.index(sub_text)
+    #                         current_behavior[index] = sub_selected_stars_num
+    #                     else:
+    #                         print(f'出错了！现在的sub_text:"{sub_text}"')
+    #                         # current_behavior.append('null')
+    #
+    #         behavior.append(current_behavior)
+    #         print(f'当前行为表型为:{current_behavior}')
+    #
+    #         sig = False
+    #
+    #     except Exception as e:
+    #         with open('error_info.txt', 'a+') as fr:
+    #             fr.write(f'出错样本是:{breed}, 出错原因是:{e}' + '\n')
+    #
+    # export_info(behavior)
 
 
 def get_breed_url(url):
@@ -320,9 +355,9 @@ if __name__ == "__main__":
     web_url = 'https://www.akc.org/dog-breeds/'
     driver = get_driver()
 
-    get_breed_url(web_url)
+    # get_breed_url(web_url)
 
-    # get_crawler(web_url)
+    get_crawler()
     # export_info()
 
     # 休息一分钟，检查信息
