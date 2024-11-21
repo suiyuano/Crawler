@@ -102,16 +102,19 @@ def get_crawler():
             all_text = get_all_text(statistics)
         except Exception as e:
             all_text = str(e)
-        with open(f'./AKC_results/{breed.replace(" ", "_")}_statistics.txt', 'w') as f:
+        with open(f'./AKC_results/{breed.replace(" ", "_")}_statistics.txt', 'w', encoding='utf-8') as f:
             f.write(all_text)
         f.close()
         # print(f'基本统计量为：{all_text}')
 
         # 表型按钮
-        trait_element = driver.find_element(By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div/div[1]/ul/li[5]")
-        # # 使用JavaScript代码滚动到元素的位置
-        # driver.execute_script("arguments[0].scrollIntoView();", trait_element)
-        trait_element.click()
+        try:
+            trait_element = driver.find_element(By.XPATH, "/html/body/div[4]/div[2]/div/div[3]/div/div[1]/ul/li[5]")
+            # # 使用JavaScript代码滚动到元素的位置
+            # driver.execute_script("arguments[0].scrollIntoView();", trait_element)
+            trait_element.click()
+        except:
+            continue
 
         children_elements = driver.find_element(By.XPATH, '//*[@id="breed-page__traits__all"]/div/div').find_elements(
             By.XPATH, "./*")
