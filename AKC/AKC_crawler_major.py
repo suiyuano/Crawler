@@ -80,11 +80,15 @@ def get_crawler():
     file = file_line_generator('AKC_breed_url.txt')
 
     traits = {}
-    traits_terms = []
+    traits_terms = ['AKC_breed']
 
     for each in file:
         parts = each.strip('\n').split('\t')
         breed = parts[0]
+        print(f'正在处理：{breed}')
+        # 初始化
+        traits[breed] = {}
+        traits[breed]['AKC_breed'] = breed
         url = parts[1]
 
         driver.get(url)
@@ -92,9 +96,12 @@ def get_crawler():
         time.sleep(5)
 
         # 基本统计量
-        statistics = driver.find_element(By.XPATH, '/html/body/div[4]/div[2]/div/div[2]/div[2]')
-        # 获取目标元素下的所有文本
-        all_text = get_all_text(statistics)
+        try:
+            statistics = driver.find_element(By.XPATH, '/html/body/div[4]/div[2]/div/div[2]/div[2]')
+            # 获取目标元素下的所有文本
+            all_text = get_all_text(statistics)
+        except Exception as e:
+            all_text = e
         with open(f'./AKC_results/{breed.replace(" ", "_")}_statistics.txt', 'w') as f:
             f.write(all_text)
         f.close()
@@ -112,8 +119,45 @@ def get_crawler():
         # 遍历所有子元素，并获取它们的属性值，这里以'data-attribute'为例
         for child in children_elements:
             header = child.find_element(By.CSS_SELECTOR, 'h4').text
-            print(f'{breed}:{header}')
+            if header in traits_terms:
+                pass
+            else:
+                traits_terms.append(header)
 
+            try:
+                choice_ele = child.find_element(By.CLASS_NAME, 'breed-trait-score').find_element(By.CLASS_NAME,
+                                                                                                 'breed-trait-score__choices')
+
+                # 获取该元素下所有的子元素
+                all_choice = choice_ele.find_elements(By.CSS_SELECTOR, "div")
+
+                # 遍历所有子元素，获取它们的class属性
+                selected_text = ''
+                for each_star in all_choice:
+                    class_attr = each_star.get_attribute('class')
+                    if 'selected' in class_attr:
+                        selected_text += each_star.text + '-'
+                selected_text = selected_text.strip('-')
+                print(f'{header}:{selected_text}')
+
+                traits[breed][header] = selected_text
+
+            except  Exception as e:
+                # print(f'错误信息是:{e}')
+                star_ele = child.find_element(By.CLASS_NAME, 'breed-trait-score').find_element(By.CLASS_NAME,
+                                                                                               'breed-trait-score__score-wrap')
+                # 获取该元素下所有的子元素
+                all_star = star_ele.find_elements(By.TAG_NAME, "*")
+
+                selected_stars_num = 0
+                # 遍历所有子元素，获取它们的class属性
+                for each_star in all_star:
+                    class_attr = each_star.get_attribute('class')
+                    if 'filled' in class_attr:
+                        selected_stars_num += 1
+                print(f'{header}:{selected_stars_num}')
+
+                traits[breed][header] = selected_stars_num
 
     # sig = True
     # file = file_line_generator('tree_sort_test.txt')
@@ -300,6 +344,7 @@ def get_crawler():
     #             fr.write(f'出错样本是:{breed}, 出错原因是:{e}' + '\n')
     #
     # export_info(behavior)
+    export_info(traits,traits_terms)
 
 
 def get_breed_url(url):
@@ -331,8 +376,20 @@ def get_breed_url(url):
             f.write(breed + '\t' + attribute_value + '\n')
 
 
-def export_info(outlist):
-    sheetname = "dogtime"
+def export_info(trait, trait_terms):
+
+    outlist = []
+    outlist.append(trait_terms)
+    for key,value in trait.items():
+        current = []
+        for each_trait in trait_terms:
+            if each_trait in value:
+                current.append(str(value[each_trait]))
+            else:
+                current.append('null')
+        outlist.append(current)
+
+    sheetname = "AKC"
 
     # 创建输出表格Excel：创建工作表
     excel = openpyxl.Workbook()
@@ -347,7 +404,7 @@ def export_info(outlist):
             cell.value = outlist[i][k]
 
     # 保存excel文件
-    excel.save(f'dogtime_behavior_info.xlsx')
+    excel.save(f'AKC_alltraits_info.xlsx')
 
 
 if __name__ == "__main__":
