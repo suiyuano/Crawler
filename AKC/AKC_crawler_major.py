@@ -101,7 +101,7 @@ def get_crawler():
             # 获取目标元素下的所有文本
             all_text = get_all_text(statistics)
         except Exception as e:
-            all_text = e
+            all_text = str(e)
         with open(f'./AKC_results/{breed.replace(" ", "_")}_statistics.txt', 'w') as f:
             f.write(all_text)
         f.close()
@@ -344,7 +344,7 @@ def get_crawler():
     #             fr.write(f'出错样本是:{breed}, 出错原因是:{e}' + '\n')
     #
     # export_info(behavior)
-    export_info(traits,traits_terms)
+    export_info(traits, traits_terms)
 
 
 def get_breed_url(url):
@@ -377,10 +377,9 @@ def get_breed_url(url):
 
 
 def export_info(trait, trait_terms):
-
     outlist = []
     outlist.append(trait_terms)
-    for key,value in trait.items():
+    for key, value in trait.items():
         current = []
         for each_trait in trait_terms:
             if each_trait in value:
